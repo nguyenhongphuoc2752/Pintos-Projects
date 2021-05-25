@@ -1,6 +1,7 @@
 # Document for Pintos Projects
 
 Ngày thực hiện: 18/05/2021
+
 Author: Nguyễn Hồng Phước
 
 ------
@@ -11,7 +12,15 @@ Author: Nguyễn Hồng Phước
 
 ------
 
-## Môi trường thực hiện
+## Overview
+
+ Bài viết triển khai vấn đề `alarm-clock` bằng cách sửa đổi một số hàm trong `src/threads` và `src/devices`. Trong bài viết này,
+
+- Phần [Analysis](#Analysis): trình bày cụ thể quá trình phân tích hàm `timer_sleep()` và các hàm liên quan.
+- Phần [Summary](#Summary): cô đọng các vấn đề sau khi đã phân tích.
+- Phần [Solution](#Solution): trình bày phần code đã sửa đổi, kiểm tra và đánh giá kết quả đã đạt được.
+
+## Environment
 
 - Hệ điều hành: Linux Ubuntu 18.04.5 - phiên bản kernel 5.4.0-73-generic
 
@@ -25,7 +34,7 @@ Author: Nguyễn Hồng Phước
 
 - Công cụ gỡ lỗi: gdb
 
-## Nguyên tắc thực hiện
+## Rules
 
 Chạy hệ điều hành Pintos thông qua qemu, hệ điều hành sẽ in kết quả chạy theo quá trình triển khai của Pintos và đánh giá xem việc triển khai Pintos có đáp ứng yêu cầu hay không bằng cách so sánh kết quả đầu ra tiêu chuẩn so với đầu ra thực tế.
 
@@ -37,7 +46,7 @@ Mục tiêu của bài viết này là thực hiện phân tích và giải quy�
 
 Theo [Requirements]([https://web.stanford.edu/~ouster/cgi-bin/cs140-spring20/pintos/pintos_2.html) của đại học Stanford, đối với problem Alarm Clock, vấn đề hiện có trong hệ điều hành là khi thực hiện một thread nào đó thì nó luôn ở trạng thái sẵn sàng để chạy, điều này dẫn tới việc luôn chiếm dụng tài nguyên CPU, gây lãng phí tài nguyên (**busy waiting** - nguyên nhân sẽ được phân tích bên dưới). Yêu cầu đặt ra là thực hiện lại hàm `timer_sleep()` trong `devices/timer.c` để tránh tình trạng **busy waiting**.
 
-#### Phân tích
+#### Analysis
 
 **Tìm hiểu hàm** `timer_sleep()`
 
@@ -85,7 +94,7 @@ thread_yield (void)
 
 Dòng 12 - 13 cho thấy rõ vấn đề này.
 
-Để hiểu chi tiết hơn, bài viết phân tích cụ thể cách hoạt động của các hàm liên quan đến `timer_sleep()` ở bên dưới (tham khảo) hoặc bạn có thể tới trực tiếp phần [Tổng kết phân tích](#TỔNG_KẾT) hoặc [Solution](#Solution) (ctrl + click).
+Để hiểu chi tiết hơn, bài viết phân tích cụ thể cách hoạt động của các hàm liên quan đến `timer_sleep()` ở bên dưới (tham khảo) hoặc bạn có thể tới trực tiếp phần [Tổng kết phân tích](#Summary) hoặc [Solution](#Solution) (ctrl + click).
 
 
 
@@ -983,7 +992,7 @@ Tương tự, mức thực thi thấp nhất vẫn được thực hiện trong 
 
 **Phân tích cơ chế hoạt động của hệ điều hành Pintos**
 
-Phần này phân tích thêm để nắm rõ hơn về cơ chế hoạt động của hệ điều hành Pintos (tham khảo) hoặc bạn có thể đi tới [Tổng kết phân tích](#TỔNG_KẾT) hoặc [Solution](#Solution) (ctrl + click).
+Phần này phân tích thêm để nắm rõ hơn về cơ chế hoạt động của hệ điều hành Pintos (tham khảo) hoặc bạn có thể đi tới [Tổng kết phân tích](#Summary) hoặc [Solution](#Solution) (ctrl + click).
 
 Trong hàm `main()` trong `threads/init.c`:
 
@@ -1430,7 +1439,7 @@ Hàm `schedule()` được gọi để lên lịch lại luồng. Sau khi hàm `
 
 
 
-#### TỔNG_KẾT
+#### Summary
 
 **Cách hoạt động của ngắt trong hệ điều hành Pintos**
 
@@ -1448,21 +1457,23 @@ Hàm `schedule()` được gọi để lên lịch lại luồng. Sau khi hàm `
 
 Sau khi hàm `schedule()` được thực thi, luồng hiện tại sẽ được đưa vào hàng đợi và luồng tiếp theo sẽ được lên lịch. Do đó mỗi khi `timer_sleep()`  được gọi, `thread_yield()` sẽ đưa luồng hiện tại vào hàng đợi thông qua hàm `schedule()`, sau đó lên lịch cho luồng tiếp theo và đảm bảo ngắt được đóng trong quá trình lập lịch. Luồng vẫn liên tục qua lại giữa hàng đợi ready và running, chiếm tài nguyên cpu. 
 
+
+
 #### Solution
 
 Tổng kết từ phần phân tích, sau đây là một số chức năng của các hàm có khả năng hữu dụng trong giải quyết vấn đề **busy waiting**:
 
-| STT  |      File       |                   Hàm                   | Chức năng                                                    |
-| :--: | :-------------: | :-------------------------------------: | ------------------------------------------------------------ |
-|  1   | devices/timer.c |              timer_sleep()              | `timer_sleep`() kiểm tra xem thời gian trôi qua đã đạt đến thông số ticks chưa bằng cách liên tục thăm dò. Nếu nó chưa đạt thì sẽ gọi hàm `thread_yield()`. Khi đạt tới ticks, nó sẽ kết thúc quá trình ngủ. |
-|  2   |                 |               schedule()                | Luồng hiện tại sẽ được đưa vào hàng đợi và luồng tiếp theo sẽ được lên lịch. |
-|  3   |                 |             thread_yield()              | nhường CPU và chèn thread vào READY QUEUE                    |
-|  4   |                 |              timer_ticks()              | Trả về giá trị hiện tại của tick                             |
-|  5   |                 |             timer_elased()              | Trả về số tick đã trôi qua kể từ khi start                   |
-|  6   |                 |             thread_curent()             | Trả về luồng hiện tại                                        |
-|  7   |                 |             intr_disable()              | Vô hiệu hóa ngắt và trả về trạng thái ngắt trước đó          |
-|  8   |                 |        intr_set_level(old_level)        | Đặt trạng thái ngắt thành trạng thái được truyền cho tham số và trả về trạng thái ngắt trước đó |
-|  9   |                 | list_push_back(&ready_list, &cur->elem) | Chèn luồng hiện tại vào cuối hàng đợi ready                  |
+| STT  |        File         |                   Hàm                   | Chức năng                                                    |
+| :--: | :-----------------: | :-------------------------------------: | ------------------------------------------------------------ |
+|  1   |   devices/timer.c   |              timer_sleep()              | `timer_sleep`() kiểm tra xem thời gian trôi qua đã đạt đến thông số ticks chưa bằng cách liên tục thăm dò. Nếu nó chưa đạt thì sẽ gọi hàm `thread_yield()`. Khi đạt tới ticks, nó sẽ kết thúc quá trình ngủ. |
+|  2   |  threads/thread.c   |               schedule()                | Luồng hiện tại sẽ được đưa vào hàng đợi và luồng tiếp theo sẽ được lên lịch. |
+|  3   |  threads/thread.c   |             thread_yield()              | nhường CPU và chèn thread vào READY QUEUE                    |
+|  4   |   devices/timer.c   |              timer_ticks()              | Trả về giá trị hiện tại của tick                             |
+|  5   |   devices/timer.c   |             timer_elased()              | Trả về số tick đã trôi qua kể từ khi start                   |
+|  6   |  threads/thread.c   |             thread_curent()             | Trả về luồng hiện tại                                        |
+|  7   | threads/interrupt.c |             intr_disable()              | Vô hiệu hóa ngắt và trả về trạng thái ngắt trước đó          |
+|  8   | threads/interrupt.c |        intr_set_level(old_level)        | Đặt trạng thái ngắt thành trạng thái được truyền cho tham số và trả về trạng thái ngắt trước đó |
+|  9   |   devices/timer.c   | list_push_back(&ready_list, &cur->elem) | Chèn luồng hiện tại vào cuối hàng đợi ready                  |
 
 <u>*Ý tưởng:*</u> 
 
@@ -1644,11 +1655,11 @@ pintos -- -q run alarm-multiple
 
  Tiến hành tải source solution:
 
+```shell
+git clone https://github.com/nguyenhongphuoc2752/Pintos-Projects.git
 ```
 
-```
-
- Tiến hành giải nén, trong thư mục `pintos-projects-master/solution-project1`, copy các file `thread.c` `thread.h` vào `pintos/src/threads` và `timer.c` vào `pintos/src/devices` . Sau đó, vào trong thư mục `pintos/src/threads` chạy lệnh:
+ Tiến hành giải nén, trong thư mục `Pintos-Projects-master/solution-project1`, copy các file `thread.c` `thread.h` vào `pintos/src/threads` và `timer.c` vào `pintos/src/devices` . Sau đó, vào trong thư mục `pintos/src/threads` chạy lệnh:
 
 ```shell
 make
@@ -1669,7 +1680,7 @@ make check
 
 
 
-**Kết quả kiểm tra**
+<u>***Kết quả kiểm tra***</u>:
 
 Alarm Clock của mã nguồn cơ sở
 
@@ -1685,7 +1696,7 @@ Run make check
 
 
 
-**Đánh giá**
+**<u>*Đánh giá*</u>**:
 
 Trước khi thay đổi, số lượng tick rảnh rỗi là 0 vì các luồng luôn ở trạng thái sẵn sàng kể cả khi CPU sleep, nhưng số tick nhàn rỗi tăng lên khi loại bỏ được **busy waiting**. Kiểm tra cho thấy:
 
@@ -1696,3 +1707,12 @@ Trước khi thay đổi, số lượng tick rảnh rỗi là 0 vì các luồng
 - pass: alarm-ngative
 - FAIL: alarm-priority (sẽ được thực hiện ở phần Lập lịch ưu tiên - Problem 2)
 
+------
+
+## References
+
+Có rất nhiều mã và tài liệu mà bài viết tham khảo cho dự án này, nhưng đây là những mã mà bài viết rất đề cập đến.
+
+- Official Manual for Pintos Project, https://web.stanford.edu/class/cs140/projects/pintos/pintos.html#SEC_Contents.
+- Youjip Won, "Lecture notes for Pintos Project", https://oslab.kaist.ac.kr/
+- Jongwook Choi, "Pintos Repository", https://github.com/wookayin/pintos.
