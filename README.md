@@ -1,10 +1,7 @@
 # Document for Pintos Projects
 
 Ngày thực hiện: 18/05/2021
-
-Ngày hoàn thành: 25/05/2021
-
-Tác giả: Nguyễn Hồng Phước
+Author: Nguyễn Hồng Phước
 
 ------
 
